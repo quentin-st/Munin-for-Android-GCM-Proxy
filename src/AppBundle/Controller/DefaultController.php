@@ -2,9 +2,9 @@
 
 namespace AppBundle\Controller;
 
-use AppBundle\Entity\AndroidDevice;
-use AppBundle\Entity\MuninMaster;
-use Doctrine\ORM\EntityRepository;
+use AppBundle\Model\Alert;
+use AppBundle\Model\Field;
+use AppBundle\Model\Level;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -15,7 +15,10 @@ use Symfony\Component\HttpFoundation\Request;
 class DefaultController extends Controller
 {
     /**
-     * @Route("/munin/declareAlert", name="declareAlert")
+     * Called by GCM-Trigger. Must contain following information:
+     *  - reg_ids: comma-separated ids list
+     *  - data
+     * @Route("/trigger/declareAlert", name="declareAlert")
      * @Method({"POST"})
      */
     public function declareAlertAction(Request $request)
@@ -23,119 +26,57 @@ class DefaultController extends Controller
         // Check POST params
         $post = $request->request;
 
-        $check = $this->checkParams(['reg_id'], $post);
+        $check = $this->checkParams(['reg_ids', 'data'], $post);
         if ($check !== true)
             return $check;
 
+        $reg_ids = explode(',', $post->get('reg_ids'));
+
+        // Parse data
+        $dataString = $post->get('data');
+        $array = json_decode(json_encode(simplexml_load_string($dataString)), true);
+
+        // Build alerts list
+        $alerts = [];
+        foreach ($array['alert'] as $alert)
+        {
+            $a = new Alert(
+                $alert['@attributes']['group'],
+                $alert['@attributes']['host'],
+                $alert['@attributes']['graph_category'],
+                $alert['@attributes']['graph_title']
+            );
+
+            // Find fields
+            foreach (['warning', 'critical', 'unknown'] as $level)
+            {
+                if (array_key_exists($level, $alert))
+                {
+                    foreach ($alert[$level] as $field)
+                    {
+                        $a->addField(new Field(
+                            $field['@attributes']['label'],
+                            $field['@attributes']['value'],
+                            $field['@attributes']['w'],
+                            $field['@attributes']['c'],
+                            $field['@attributes']['extra'],
+                            Level::fromLabel($level)
+                        ));
+                    }
+                }
+            }
+
+            $alerts[] = $a;
+        }
+
+        // Notify each alert
+        $gcmService = $this->get('app.gcm');
+        foreach ($alerts as $alert)
+        {
+            $gcmService->notifyAlert($reg_ids, $alert);
+        }
 
         return new JsonResponse();
-    }
-
-    /**
-     * Called from Android device: registers this device
-     * @Route("/android/register", name="register")
-     * @Method({"POST"})
-     */
-    public function registerDeviceAction(Request $request)
-    {
-        $post = $request->request;
-
-        $check = $this->checkParams(['reg_id', 'friendly_name'], $post);
-        if ($check !== true)
-            return $check;
-
-        $em = $this->getDoctrine()->getManager();
-        /** @var EntityRepository $deviceRepo */
-        $deviceRepo = $em->getRepository('AppBundle:AndroidDevice');
-
-        // Check if already registered
-        if ($deviceRepo->findOneBy(['registrationId' => $post->get('reg_id')]) != null)
-            return $this->onError('This device has already been registered');
-
-        $device = new AndroidDevice();
-        $device->setRegistrationId($post->get('reg_id'));
-        $device->setName($post->get('friendly_name'));
-        $em->persist($device);
-        $em->flush();
-
-        return $this->onSuccess();
-    }
-
-    /**
-     * Called from Android device: add a server
-     * @Route("/android/addMaster")
-     * @Method({"POST"})
-     */
-    public function addMaster(Request $request)
-    {
-        $post = $request->request;
-
-        $check = $this->checkParams(['reg_id', 'mfa_id'], $post);
-        if ($check !== true)
-            return $check;
-
-        $em = $this->getDoctrine()->getManager();
-        /** @var EntityRepository $deviceRepo */
-        $deviceRepo = $em->getRepository('AppBundle:AndroidDevice');
-
-        /** @var AndroidDevice $device */
-        $device = $deviceRepo->findOneBy(['registrationId' => $post->get('reg_id')]);
-        if (!$device)
-            return $this->onError('Unregistered device');
-
-        $master = new MuninMaster();
-        $master->setAndroidDevice($device);
-        $master->setMfaId($post->get('mfa_id'));
-        $device->addMaster($master);
-        $em->persist($master);
-        $em->flush();
-
-        return $this->onSuccess([
-            'hex' => $master->getHex(),
-            'config' => $this->get('app.config')->generateConfig($master)
-        ]);
-    }
-
-    /**
-     * Called from Android device: remove a server
-     * @Route("/android/removeMaster")
-     * @Method({"POST"})
-     */
-    public function removeMaster(Request $request)
-    {
-        $post = $request->request;
-
-        $check = $this->checkParams(['reg_id', 'hex'], $post);
-        if ($check !== true)
-            return $check;
-
-
-        $em = $this->getDoctrine()->getManager();
-        /** @var EntityRepository $deviceRepo */
-        $deviceRepo = $em->getRepository('AppBundle:AndroidDevice');
-        /** @var EntityRepository $masterRepo */
-        $masterRepo = $em->getRepository('AppBundle:MuninMaster');
-
-        /** @var AndroidDevice $device */
-        $device = $deviceRepo->findOneBy(['registrationId' => $post->get('reg_id')]);
-        if (!$device)
-            return $this->onError('Unregistered device');
-
-        // Find master
-        /** @var MuninMaster $master */
-        $master = $masterRepo->findOneBy(['hex' => $post->get('hex')]);
-        if (!$master)
-            return $this->onError('Unknown master');
-
-        if (!$device->getMasters()->contains($master))
-            return $this->onError('This master does not belong to this device');
-
-        // Remove it
-        $device->removeMaster($master);
-        $em->remove($master);
-        $em->flush();
-
-        return $this->onSuccess();
     }
 
     /**
