@@ -30,7 +30,7 @@ class DefaultController extends Controller
         if ($check !== true)
             return $check;
 
-        $reg_ids = explode(',', $post->get('reg_ids'));
+        $reg_ids = json_decode($post->get('reg_ids'), true);
 
         // Parse data
         $dataString = $post->get('data');
