@@ -7,4 +7,4 @@ services:
     app.gcm:
         class: AppBundle\Service\GCMService
         arguments:
-            - api_key: "%gcm_api_key%"
+            - gcmClient: "@endroid.gcm.client"

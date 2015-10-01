@@ -2,13 +2,16 @@
 
 namespace AppBundle\Service;
 
+use Endroid\Gcm\Client;
+
 class GCMService
 {
-    private $gcmApiKey;
+    /** @var Client */
+    private $gcmClient;
 
-    public function __construct($gcmApiKey)
+    public function __construct(Client $gcmClient)
     {
-        $this->gcmApiKey = $gcmApiKey;
+        $this->gcmClient = $gcmClient;
     }
 
     public function notifyAlert()

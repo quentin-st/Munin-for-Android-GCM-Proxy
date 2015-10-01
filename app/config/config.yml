@@ -78,3 +78,6 @@ swiftmailer:
     username:  "%mailer_user%"
     password:  "%mailer_password%"
     spool:     { type: memory }
+
+endroid_gcm:
+    api_key: "%gcm_api_key%"
