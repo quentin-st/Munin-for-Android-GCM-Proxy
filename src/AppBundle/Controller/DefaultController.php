@@ -80,6 +80,24 @@ class DefaultController extends Controller
     }
 
     /**
+     * @Route("/android/sendConfig")
+     * @Method({"POST"})
+     */
+    public function sendConfigByMailAction(Request $request)
+    {
+        // Check POST params
+        $post = $request->request;
+
+        $check = $this->checkParams(['reg_ids', 'data'], $post);
+        if ($check !== true)
+            return $check;
+
+        // TODO
+
+        return new JsonResponse();
+    }
+
+    /**
      * @param array $requiredParams
      * @param ParameterBag $post
      * @return bool|JsonResponse
