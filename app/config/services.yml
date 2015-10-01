@@ -8,3 +8,5 @@ services:
         class: AppBundle\Service\GCMService
         arguments:
             - gcmClient: "@endroid.gcm.client"
+    app.config:
+        class: AppBundle\Service\ConfigService
