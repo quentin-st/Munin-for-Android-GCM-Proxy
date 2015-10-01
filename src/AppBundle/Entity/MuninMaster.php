@@ -21,6 +21,13 @@ class MuninMaster
     private $id;
 
     /**
+     * Id for this master on device
+     * @var integer
+     * @ORM\Column(name="mfa_id", type="integer")
+     */
+    private $mfaId;
+
+    /**
      * Unique hexadecimal string - identifies this master in Python script config
      * @var string
      * @ORM\Column(name="hex", type="string", length=255)
@@ -46,6 +53,24 @@ class MuninMaster
     public function getId()
     {
         return $this->id;
+    }
+
+    /**
+     * @return int
+     */
+    public function getMfaId()
+    {
+        return $this->mfaId;
+    }
+
+    /**
+     * @param int $mfaId
+     * @return $this
+     */
+    public function setMfaId($mfaId)
+    {
+        $this->mfaId = $mfaId;
+        return $this;
     }
 
     /**

@@ -9,6 +9,7 @@ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 
 class DefaultController extends Controller
@@ -22,8 +23,9 @@ class DefaultController extends Controller
         // Check POST params
         $post = $request->request;
 
-        if (!$post->has('reg_id'))
-            $this->onError('Missing reg_id parameter');
+        $check = $this->checkParams(['reg_id'], $post);
+        if ($check !== true)
+            return $check;
 
 
         return new JsonResponse();
@@ -38,25 +40,21 @@ class DefaultController extends Controller
     {
         $post = $request->request;
 
-        if (!$post->has('reg_id'))
-            return $this->onError('Missing reg_id');
-        $regId = $post->get('reg_id');
-
-        if (!$post->has('friendly_name'))
-            return $this->onError('Missing friendly name');
-        $friendlyName = $post->get('friendly_name');
+        $check = $this->checkParams(['reg_id', 'friendly_name'], $post);
+        if ($check !== true)
+            return $check;
 
         $em = $this->getDoctrine()->getManager();
         /** @var EntityRepository $deviceRepo */
         $deviceRepo = $em->getRepository('AppBundle:AndroidDevice');
 
         // Check if already registered
-        if ($deviceRepo->findOneBy(['registrationId' => $regId]) != null)
+        if ($deviceRepo->findOneBy(['registrationId' => $post->get('reg_id')]) != null)
             return $this->onError('This device has already been registered');
 
         $device = new AndroidDevice();
-        $device->setRegistrationId($regId);
-        $device->setName($friendlyName);
+        $device->setRegistrationId($post->get('reg_id'));
+        $device->setName($post->get('friendly_name'));
         $em->persist($device);
         $em->flush();
 
@@ -72,21 +70,22 @@ class DefaultController extends Controller
     {
         $post = $request->request;
 
-        if (!$post->has('reg_id'))
-            return $this->onError('Missing reg_id');
-        $regId = $post->get('reg_id');
+        $check = $this->checkParams(['reg_id', 'mfa_id'], $post);
+        if ($check !== true)
+            return $check;
 
         $em = $this->getDoctrine()->getManager();
         /** @var EntityRepository $deviceRepo */
         $deviceRepo = $em->getRepository('AppBundle:AndroidDevice');
 
         /** @var AndroidDevice $device */
-        $device = $deviceRepo->findOneBy(['registrationId' => $regId]);
+        $device = $deviceRepo->findOneBy(['registrationId' => $post->get('reg_id')]);
         if (!$device)
             return $this->onError('Unregistered device');
 
         $master = new MuninMaster();
         $master->setAndroidDevice($device);
+        $master->setMfaId($post->get('mfa_id'));
         $device->addMaster($master);
         $em->persist($master);
         $em->flush();
@@ -106,13 +105,10 @@ class DefaultController extends Controller
     {
         $post = $request->request;
 
-        if (!$post->has('reg_id'))
-            return $this->onError('Missing reg_id');
-        $regId = $post->get('reg_id');
+        $check = $this->checkParams(['reg_id', 'hex'], $post);
+        if ($check !== true)
+            return $check;
 
-        if (!$post->has('hex'))
-            return $this->onError('Missing hex');
-        $hex = $post->get('hex');
 
         $em = $this->getDoctrine()->getManager();
         /** @var EntityRepository $deviceRepo */
@@ -121,13 +117,13 @@ class DefaultController extends Controller
         $masterRepo = $em->getRepository('AppBundle:MuninMaster');
 
         /** @var AndroidDevice $device */
-        $device = $deviceRepo->findOneBy(['registrationId' => $regId]);
+        $device = $deviceRepo->findOneBy(['registrationId' => $post->get('reg_id')]);
         if (!$device)
             return $this->onError('Unregistered device');
 
         // Find master
         /** @var MuninMaster $master */
-        $master = $masterRepo->findOneBy(['hex' => $hex]);
+        $master = $masterRepo->findOneBy(['hex' => $post->get('hex')]);
         if (!$master)
             return $this->onError('Unknown master');
 
@@ -142,6 +138,24 @@ class DefaultController extends Controller
         return $this->onSuccess();
     }
 
+    /**
+     * @param array $requiredParams
+     * @param ParameterBag $post
+     * @return bool|JsonResponse
+     */
+    private function checkParams(array $requiredParams, ParameterBag $post)
+    {
+        foreach ($requiredParams as $param) {
+            if (!$post->has($param))
+                return $this->onError('Missing param: ' . $param);
+        }
+        return true;
+    }
+
+    /**
+     * @param $message
+     * @return JsonResponse
+     */
     private function onError($message)
     {
         return new JsonResponse([
@@ -150,6 +164,10 @@ class DefaultController extends Controller
         ]);
     }
 
+    /**
+     * @param array $data
+     * @return JsonResponse
+     */
     private function onSuccess($data=[])
     {
         if (!array_key_exists('success', $data))
