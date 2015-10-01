@@ -8,3 +8,9 @@ services:
         class: AppBundle\Service\GCMService
         arguments:
             - gcmClient: "@endroid.gcm.client"
+
+    app.mail_service:
+            class: AppBundle\Service\MailService
+            arguments:
+                mailer: "@mailer"
+                twig: "@twig"

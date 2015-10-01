@@ -88,7 +88,7 @@ class DefaultController extends Controller
         // Check POST params
         $post = $request->request;
 
-        $check = $this->checkParams(['reg_ids', 'data'], $post);
+        $check = $this->checkParams(['mailAddress', 'regId'], $post);
         if ($check !== true)
             return $check;
 
