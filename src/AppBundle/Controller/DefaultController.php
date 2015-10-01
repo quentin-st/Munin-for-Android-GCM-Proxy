@@ -92,7 +92,10 @@ class DefaultController extends Controller
         if ($check !== true)
             return $check;
 
-        // TODO
+        $this->get('app.mail_service')->sendInstructionsMail(
+            $post->get('mailAddress'),
+            $post->get('regId')
+        );
 
         return new JsonResponse();
     }

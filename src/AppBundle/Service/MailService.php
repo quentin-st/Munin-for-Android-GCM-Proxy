@@ -17,6 +17,17 @@ class MailService
 		$this->twig = $twig;
 	}
 
+	public function sendInstructionsMail($emailAddress, $appId)
+	{
+		$this->sendMail(
+			'Notifications install instructions',
+			'support@munin-for-android.com',
+			'Munin for Android',
+			$emailAddress,
+			'Here is your app id: ' . $appId
+		);
+	}
+
 	public function sendMail($subject, $fromMail, $fromName, $to, $text, $plainText=null)
 	{
 		$messageBody = $this->twig->render('AppBundle::mailBody.html.twig', [
