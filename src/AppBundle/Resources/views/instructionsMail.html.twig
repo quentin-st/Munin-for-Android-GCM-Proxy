@@ -1,0 +1,32 @@
+{% extends 'AppBundle::mailBody.html.twig' %}
+
+{% block title %}Notifications install instructions{% endblock %}
+
+{% block content %}
+	<p>In order to use Munin for Android real-time push notifications, you have to setup your servers first.</p>
+	<p>On each server, you'll have to install a small script - called Munin for Android GCM Trigger - which will
+		be called by munin when it detects an alert. This script will relay the info up to your devices.</p>
+	<p>Install this script once, and configure the devices on it. That's all!</p>
+	<p><a href="https://github.com/chteuchteu/Munin-for-Android-GCM-Trigger/blob/master/README.md">Complete install
+			instructions are available here.</a></p>
+
+	<p>Here is your device unique id:</p>
+	<pre>{{ app_id }}</pre>
+
+	<p>We generated the Munin for Android GCM Trigger configuration file for you, here it is. If you already installed
+		the script on your server, just add the line in the devices list.</p>
+	<pre>
+		<code>
+			#!/usr/bin/python
+			# -*- coding: utf-8 -*-
+
+			# ...
+
+			devices = [
+				'{{ app_id }}'
+			]
+		</code>
+	</pre>
+
+	<p>You can respond to this mail if you need help.</p>
+{% endblock %}
