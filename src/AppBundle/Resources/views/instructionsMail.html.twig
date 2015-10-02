@@ -13,18 +13,18 @@
 	<p>Here is your device unique id:</p>
 	<pre>{{ app_id }}</pre>
 
-	<p>We generated the Munin for Android GCM Trigger configuration file for you, here it is. If you already installed
+	<p>We generated the Munin for Android GCM Trigger configuration file (<pre>devices.py</pre>) for you, here it is: If you already installed
 		the script on your server, just add the line in the devices list.</p>
 	<pre>
 		<code>
-			#!/usr/bin/python
-			# -*- coding: utf-8 -*-
+	#!/usr/bin/python
+	# -*- coding: utf-8 -*-
 
-			# ...
+	# ...
 
-			devices = [
-				'{{ app_id }}'
-			]
+	devices = [
+		'{{ app_id }}'
+	]
 		</code>
 	</pre>
 
