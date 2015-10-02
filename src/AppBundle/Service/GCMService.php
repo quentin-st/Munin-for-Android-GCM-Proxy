@@ -21,4 +21,9 @@ class GCMService
 
         return $this->gcmClient->send($data, $regIds);
     }
+
+    public function test(array $regIds)
+    {
+        return $this->gcmClient->send('test', $regIds);
+    }
 }

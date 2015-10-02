@@ -80,6 +80,29 @@ class DefaultController extends Controller
     }
 
     /**
+     * Called by GCM-Trigger. Must contain following information:
+     *  - reg_ids: comma-separated ids list
+     * @Route("/trigger/test", name="test")
+     * @Method({"POST"})
+     */
+    public function testAction(Request $request)
+    {
+        // Check POST params
+        $post = $request->request;
+
+        $check = $this->checkParams(['reg_ids'], $post);
+        if ($check !== true)
+            return $check;
+
+        $reg_ids = json_decode($post->get('reg_ids'), true);
+
+        // Notify each device
+        $this->get('app.gcm')->test($reg_ids);
+
+        return new JsonResponse();
+    }
+
+    /**
      * @Route("/android/sendConfig")
      * @Method({"POST"})
      */
