@@ -24,7 +24,7 @@ class GCMService
 
     public function test(array $regIds)
     {
-        return $this->gcmClient->send('test', $regIds);
+        return $this->gcmClient->send(['test' => true], $regIds);
     }
 
     public function getClient()
