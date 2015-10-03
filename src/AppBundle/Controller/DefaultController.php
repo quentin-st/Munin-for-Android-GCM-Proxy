@@ -11,6 +11,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class DefaultController extends Controller
 {
@@ -99,7 +100,7 @@ class DefaultController extends Controller
         // Notify each device
         $this->get('app.gcm')->test($reg_ids);
 
-        return new JsonResponse();
+        return new Response("OK");
     }
 
     /**
