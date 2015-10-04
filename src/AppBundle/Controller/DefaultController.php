@@ -38,7 +38,7 @@ class DefaultController extends Controller
 
         // Build alerts list
         $alerts = [];
-        foreach ($array['alert'] as $alert)
+        foreach ($array as $alert)
         {
             $a = new Alert(
                 $alert['@attributes']['group'],
@@ -52,17 +52,14 @@ class DefaultController extends Controller
             {
                 if (array_key_exists($level, $alert))
                 {
-                    foreach ($alert[$level] as $field)
-                    {
-                        $a->addField(new Field(
-                            $field['@attributes']['label'],
-                            $field['@attributes']['value'],
-                            $field['@attributes']['w'],
-                            $field['@attributes']['c'],
-                            $field['@attributes']['extra'],
-                            Level::fromLabel($level)
-                        ));
-                    }
+                    $a->addField(new Field(
+                        $alert[$level]['@attributes']['label'],
+                        $alert[$level]['@attributes']['value'],
+                        $alert[$level]['@attributes']['w'],
+                        $alert[$level]['@attributes']['c'],
+                        $alert[$level]['@attributes']['extra'],
+                        Level::fromLabel($level)
+                    ));
                 }
             }
 
