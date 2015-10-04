@@ -11,7 +11,6 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 class DefaultController extends Controller
 {
@@ -70,14 +69,10 @@ class DefaultController extends Controller
             $alerts[] = $a;
         }
 
-        // Notify each alert
-        $gcmService = $this->get('app.gcm');
-        foreach ($alerts as $alert)
-        {
-            $gcmService->notifyAlert($reg_ids, $alert);
-        }
+        // Notify devices
+        $this->get('app.gcm')->notifyAlerts($reg_ids, $alerts);
 
-        return new JsonResponse();
+        return $this->onSuccess();
     }
 
     /**
@@ -100,7 +95,7 @@ class DefaultController extends Controller
         // Notify each device
         $this->get('app.gcm')->test($reg_ids);
 
-        return new Response("OK");
+        return $this->onSuccess();
     }
 
     /**

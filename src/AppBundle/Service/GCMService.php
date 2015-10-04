@@ -15,11 +15,21 @@ class GCMService
         $this->gcmClient = $gcmClient;
     }
 
-    public function notifyAlert(array $regIds, Alert $alert)
+    /**
+     * Notifies devices about alerts
+     * @param array $regIds
+     * @param Alert[] $alerts
+     * @return bool
+     */
+    public function notifyAlerts(array $regIds, array $alerts)
     {
-        $data = $alert->toArray();
+        $alertsArray = [];
+        foreach ($alerts as $alert)
+            $alertsArray[] = $alert->toArray();
 
-        return $this->gcmClient->send($data, $regIds);
+        return $this->gcmClient->send([
+            'alerts' => $alertsArray
+        ], $regIds);
     }
 
     public function test(array $regIds)
