@@ -36,40 +36,41 @@ class DefaultController extends Controller
         $dataString = $post->get('data');
         $array = json_decode(json_encode(simplexml_load_string($dataString)), true);
 
-        // Build alerts list
-        $alerts = [];
-        foreach ($array as $alert)
-        {
-            $a = new Alert(
-                $alert['@attributes']['group'],
-                $alert['@attributes']['host'],
-                $alert['@attributes']['graph_category'],
-                $alert['@attributes']['graph_title']
-            );
+        try {
+            // Build alerts list
+            $alerts = [];
+            foreach ($array as $alert) {
+                $a = new Alert(
+                    $alert['@attributes']['group'],
+                    $alert['@attributes']['host'],
+                    $alert['@attributes']['graph_category'],
+                    $alert['@attributes']['graph_title']
+                );
 
-            // Find fields
-            foreach (['warning', 'critical', 'unknown'] as $level)
-            {
-                if (array_key_exists($level, $alert))
-                {
-                    $a->addField(new Field(
-                        $alert[$level]['@attributes']['label'],
-                        $alert[$level]['@attributes']['value'],
-                        $alert[$level]['@attributes']['w'],
-                        $alert[$level]['@attributes']['c'],
-                        $alert[$level]['@attributes']['extra'],
-                        Level::fromLabel($level)
-                    ));
+                // Find fields
+                foreach (['warning', 'critical', 'unknown'] as $level) {
+                    if (array_key_exists($level, $alert)) {
+                        $a->addField(new Field(
+                            $alert[$level]['@attributes']['label'],
+                            $alert[$level]['@attributes']['value'],
+                            $alert[$level]['@attributes']['w'],
+                            $alert[$level]['@attributes']['c'],
+                            $alert[$level]['@attributes']['extra'],
+                            Level::fromLabel($level)
+                        ));
+                    }
                 }
+
+                $alerts[] = $a;
             }
 
-            $alerts[] = $a;
+            // Notify devices
+            $this->get('app.gcm')->notifyAlerts($reg_ids, $alerts);
+
+            return $this->onSuccess();
+        } catch (\Exception $ex) {
+            return $this->onError('Error processing input: ' . $ex->getMessage());
         }
-
-        // Notify devices
-        $this->get('app.gcm')->notifyAlerts($reg_ids, $alerts);
-
-        return $this->onSuccess();
     }
 
     /**
