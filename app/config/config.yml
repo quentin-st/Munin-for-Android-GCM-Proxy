@@ -78,7 +78,6 @@ swiftmailer:
     username:  "%mailer_user%"
     password:  "%mailer_password%"
     encryption: "%mailer_encryption%"
-    port:      "%mailer_port%"
     spool:     { type: memory }
 
 endroid_gcm:
