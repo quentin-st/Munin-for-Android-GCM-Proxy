@@ -40,12 +40,14 @@ class DefaultController extends Controller
             // Build alerts list
             $alerts = [];
             foreach ($array as $alert) {
-                $a = new Alert(
-                    $alert['@attributes']['group'],
-                    $alert['@attributes']['host'],
-                    $alert['@attributes']['graph_category'],
-                    $alert['@attributes']['graph_title']
-                );
+                $key_exists = array_key_exists('@attributes', $alert);
+                $group =    $key_exists     ? $alert['@attributes']['group']    : null;
+                $host =     $key_exists     ? $alert['@attributes']['host']     : null;
+                $graph_category = $key_exists ? $alert['@attributes']['graph_category'] : null;
+                $graph_title = $key_exists  ? $alert['@attributes']['graph_title'] : null;
+
+
+                $a = new Alert($group, $host, $graph_category, $graph_title);
 
                 // Find fields
                 foreach (['warning', 'critical', 'unknown'] as $level) {
