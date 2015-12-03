@@ -43,4 +43,14 @@ class Alert
 
         return $array;
     }
+
+    /**
+     * Group & host must not be null for this alert to be valid
+     * @return bool
+     */
+    public function isValid()
+    {
+        return $this->group != null
+            && $this->host != null;
+    }
 }

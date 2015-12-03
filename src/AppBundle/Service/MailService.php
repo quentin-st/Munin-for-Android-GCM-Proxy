@@ -2,6 +2,7 @@
 
 namespace AppBundle\Service;
 
+use AppBundle\Entity\ProxyError;
 use Swift_Mailer;
 
 class MailService
@@ -10,11 +11,16 @@ class MailService
 	private $mailer;
 	/** @var \Twig_Environment */
 	private $twig;
+	private $maintainerEmail;
 
-	public function __construct($mailer, $twig)
+	private $senderEmail = 'support@munin-for-android.com';
+	private $senderName = 'Munin for Android';
+
+	public function __construct($mailer, $twig, $maintainerEmail)
 	{
 		$this->mailer = $mailer;
 		$this->twig = $twig;
+		$this->maintainerEmail = $maintainerEmail;
 	}
 
 	public function sendInstructionsMail($emailAddress, $appId)
@@ -25,9 +31,24 @@ class MailService
 
 		$this->sendMail(
 			'Notifications install instructions',
-			'support@munin-for-android.com',
-			'Munin for Android',
+			$this->senderEmail,
+			$this->senderName,
 			$emailAddress,
+			$messageBody
+		);
+	}
+
+	public function sendProxyExceptionMail(ProxyError $proxyError)
+	{
+		$messageBody = $this->twig->render('AppBundle::proxyExceptionMail.html.twig', [
+			'error' => $proxyError
+		]);
+
+		$this->sendMail(
+			'New Munin-for-Android-GCM-Proxy error',
+			$this->senderEmail,
+			$this->senderName,
+			$this->maintainerEmail,
 			$messageBody
 		);
 	}

@@ -20,3 +20,6 @@ parameters:
     secret:            ThisTokenIsNotSoSecretChangeIt
 
     gcm_api_key:       null
+
+    maintainer_email:  null
+    send_mail_on_error: false

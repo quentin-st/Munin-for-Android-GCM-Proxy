@@ -2,6 +2,7 @@
 
 namespace AppBundle\Controller;
 
+use AppBundle\Entity\ProxyError;
 use AppBundle\Model\Alert;
 use AppBundle\Model\Field;
 use AppBundle\Model\Level;
@@ -35,6 +36,7 @@ class DefaultController extends Controller
         // Parse data
         $dataString = $post->get('data');
         $array = json_decode(json_encode(simplexml_load_string($dataString)), true);
+        $helpDiagnose = $post->get('help_diagnose', false);
 
         try {
             // Build alerts list
@@ -48,6 +50,21 @@ class DefaultController extends Controller
 
 
                 $a = new Alert($group, $host, $graph_category, $graph_title);
+
+                if (!$a->isValid() && $helpDiagnose) {
+                    $em = $this->getDoctrine()->getManager();
+                    $error = new ProxyError();
+                    $error
+                        ->setSource($request->getClientIp())
+                        ->setException('Null value')
+                        ->setStructure($dataString);
+
+                    $em->persist($error);
+                    $em->flush();
+
+                    if ($this->getParameter('send_mail_on_error'))
+                        $this->get('app.mail_service')->sendProxyExceptionMail($error);
+                }
 
                 // Find fields
                 foreach (['warning', 'critical', 'unknown'] as $level) {
@@ -71,6 +88,21 @@ class DefaultController extends Controller
 
             return $this->onSuccess();
         } catch (\Exception $ex) {
+            if ($helpDiagnose) {
+                $em = $this->getDoctrine()->getManager();
+                $error = new ProxyError();
+                $error
+                    ->setSource($request->getClientIp())
+                    ->setException($ex->getMessage())
+                    ->setStructure($dataString);
+
+                $em->persist($error);
+                $em->flush();
+
+                if ($this->getParameter('send_mail_on_error'))
+                    $this->get('app.mail_service')->sendProxyExceptionMail($error);
+            }
+
             return $this->onError('Error processing input: ' . $ex->getMessage());
         }
     }
