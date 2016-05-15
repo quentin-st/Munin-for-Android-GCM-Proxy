@@ -8,12 +8,10 @@ use AppBundle\Model\Field;
 use AppBundle\Model\Level;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 
-class DefaultController extends Controller
+class DefaultController extends BaseController
 {
     /**
      * Called by GCM-Trigger. Must contain following information:
@@ -35,49 +33,53 @@ class DefaultController extends Controller
 
         // Parse data
         $dataString = $post->get('data');
-        $array = json_decode(json_encode(simplexml_load_string($dataString)), true);
+        $xml = simplexml_load_string($dataString);
         $helpDiagnose = $post->get('help_diagnose', false);
+
+        if ($xml === false) {
+            // There's an error
+            $errors = implode("\n", libxml_get_errors());
+
+            if ($helpDiagnose)
+                $this->storeAndSendDiagnostic($request, $errors, $dataString);
+
+            return $this->onError('Error processing input: ' . $errors);
+        }
 
         try {
             // Build alerts list
             $alerts = [];
-            foreach ($array as $alert) {
-                $key_exists = array_key_exists('@attributes', $alert);
-                $group =    $key_exists     ? $alert['@attributes']['group']    : null;
-                $host =     $key_exists     ? $alert['@attributes']['host']     : null;
-                $graph_category = $key_exists ? $alert['@attributes']['graph_category'] : null;
-                $graph_title = $key_exists  ? $alert['@attributes']['graph_title'] : null;
 
+            /** @var \SimpleXMLElement $alert */
+            foreach ($xml->alert as $alert) {
+                $attrs = $alert->attributes();
+                $group = (string) $attrs['group'];
+                $host = (string) $attrs['host'];
+                $graph_category = (string) $attrs['graph_category'];
+                $graph_title = (string) $attrs['graph_title'];
 
                 $a = new Alert($group, $host, $graph_category, $graph_title);
 
-                if (!$a->isValid() && $helpDiagnose) {
-                    $em = $this->getDoctrine()->getManager();
-                    $error = new ProxyError();
-                    $error
-                        ->setSource($request->getClientIp())
-                        ->setException('Null value')
-                        ->setStructure($dataString);
-
-                    $em->persist($error);
-                    $em->flush();
-
-                    if ($this->getParameter('send_mail_on_error'))
-                        $this->get('app.mail_service')->sendProxyExceptionMail($error);
-                }
+                if (!$a->isValid() && $helpDiagnose)
+                    $this->storeAndSendDiagnostic($request, 'Null value', $dataString);
 
                 // Find fields
-                foreach (['warning', 'critical', 'unknown'] as $level) {
-                    if (array_key_exists($level, $alert)) {
-                        $a->addField(new Field(
-                            $alert[$level]['@attributes']['label'],
-                            $alert[$level]['@attributes']['value'],
-                            $alert[$level]['@attributes']['w'],
-                            $alert[$level]['@attributes']['c'],
-                            $alert[$level]['@attributes']['extra'],
-                            Level::fromLabel($level)
-                        ));
-                    }
+                /** @var \SimpleXMLElement $field */
+                foreach ($alert->children() as $field)
+                {
+                    $level = $field->getName();
+                    if (!in_array($level, ['warning', 'critical', 'unknown']))
+                        continue;
+
+                    $attrs = $field->attributes();
+                    $a->addField(new Field(
+                        (string) $attrs['label'],
+                        (string) $attrs['value'],
+                        (string) $attrs['w'],
+                        (string) $attrs['c'],
+                        (string) $attrs['extra'],
+                        Level::fromLabel($level)
+                    ));
                 }
 
                 $alerts[] = $a;
@@ -88,23 +90,34 @@ class DefaultController extends Controller
 
             return $this->onSuccess();
         } catch (\Exception $ex) {
-            if ($helpDiagnose) {
-                $em = $this->getDoctrine()->getManager();
-                $error = new ProxyError();
-                $error
-                    ->setSource($request->getClientIp())
-                    ->setException($ex->getMessage())
-                    ->setStructure($dataString);
-
-                $em->persist($error);
-                $em->flush();
-
-                if ($this->getParameter('send_mail_on_error'))
-                    $this->get('app.mail_service')->sendProxyExceptionMail($error);
-            }
+            if ($helpDiagnose)
+                $this->storeAndSendDiagnostic($request, $ex->getMessage(), $dataString);
 
             return $this->onError('Error processing input: ' . $ex->getMessage());
         }
+    }
+
+    /**
+     * If help_diagnose was explicitly set to true, store error & send mail to maintainer
+     * @param Request $request
+     * @param $exception
+     * @param $structure
+     */
+    private function storeAndSendDiagnostic(Request $request, $exception, $structure)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        $error = new ProxyError();
+        $error
+            ->setSource($request->getClientIp())
+            ->setException($exception)
+            ->setStructure($structure);
+
+        $em->persist($error);
+        $em->flush();
+
+        if ($this->getParameter('send_mail_on_error'))
+            $this->get('app.mail_service')->sendProxyExceptionMail($error);
     }
 
     /**
@@ -149,43 +162,5 @@ class DefaultController extends Controller
         );
 
         return new JsonResponse();
-    }
-
-    /**
-     * @param array $requiredParams
-     * @param ParameterBag $post
-     * @return bool|JsonResponse
-     */
-    private function checkParams(array $requiredParams, ParameterBag $post)
-    {
-        foreach ($requiredParams as $param) {
-            if (!$post->has($param))
-                return $this->onError('Missing param: ' . $param);
-        }
-        return true;
-    }
-
-    /**
-     * @param $message
-     * @return JsonResponse
-     */
-    private function onError($message)
-    {
-        return new JsonResponse([
-            'success' => false,
-            'message' => $message
-        ]);
-    }
-
-    /**
-     * @param array $data
-     * @return JsonResponse
-     */
-    private function onSuccess($data=[])
-    {
-        if (!array_key_exists('success', $data))
-            $data['success'] = true;
-
-        return new JsonResponse($data);
     }
 }
