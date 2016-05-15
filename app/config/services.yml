@@ -14,4 +14,4 @@ services:
         arguments:
             mailer: "@mailer"
             twig: "@twig"
-            maintainer_email: "%%maintainer_email%"
+            maintainer_email: "%maintainer_email%"
