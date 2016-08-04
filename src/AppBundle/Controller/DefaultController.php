@@ -3,6 +3,7 @@
 namespace AppBundle\Controller;
 
 use AppBundle\Entity\ProxyError;
+use AppBundle\Entity\Stat;
 use AppBundle\Model\Alert;
 use AppBundle\Model\Field;
 use AppBundle\Model\Level;
@@ -35,6 +36,10 @@ class DefaultController extends BaseController
         $dataString = $post->get('data');
         $xml = simplexml_load_string($dataString);
         $helpDiagnose = $post->get('help_diagnose', false);
+        $contributeToStats = $post->get('contribute_to_stats', true);
+
+        if ($contributeToStats)
+            $this->updateStats();
 
         if ($xml === false) {
             // There's an error
@@ -121,6 +126,15 @@ class DefaultController extends BaseController
     }
 
     /**
+     * Increments internal stats
+     */
+    private function updateStats()
+    {
+        $em = $this->getDoctrine()->getManager();
+        $em->getRepository('AppBundle:Stat')->incrementStat();
+    }
+
+    /**
      * Called by GCM-Trigger. Must contain following information:
      *  - reg_ids: comma-separated ids list
      * @Route("/trigger/test", name="test")
@@ -144,6 +158,7 @@ class DefaultController extends BaseController
     }
 
     /**
+     * Called by Android devices from notifications settings screen
      * @Route("/android/sendConfig")
      * @Method({"POST"})
      */
@@ -162,5 +177,20 @@ class DefaultController extends BaseController
         );
 
         return new JsonResponse();
+    }
+
+    /**
+     * @Route("/stats/get")
+     * @Method({"GET"})
+     */
+    public function getStats()
+    {
+        $em = $this->getDoctrine()->getManager();
+        $stat = $em->getRepository('AppBundle:Stat')->getStat();
+
+        return new JsonResponse([
+            'hits_count' => $stat->getHitsCount(),
+            'last_hit' => $stat->getLastHit()
+        ]);
     }
 }
