@@ -190,7 +190,7 @@ class DefaultController extends BaseController
 
         return new JsonResponse([
             'hits_count' => $stat->getHitsCount(),
-            'last_hit' => $stat->getLastHit()
+            'last_hit' => $stat->getLastHit()->getTimestamp()
         ]);
     }
 }
