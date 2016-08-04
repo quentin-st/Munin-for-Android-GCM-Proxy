@@ -23,6 +23,7 @@ class StatRepository extends EntityRepository
         $em = $this->getEntityManager();
 
         $stat = $this->getStat();
+        $stat->setLastHit(new \DateTime());
         $stat->setHitsCount($stat->getHitsCount()+1);
 
         $em->persist($stat);
