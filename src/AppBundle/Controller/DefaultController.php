@@ -3,7 +3,6 @@
 namespace AppBundle\Controller;
 
 use AppBundle\Entity\ProxyError;
-use AppBundle\Entity\Stat;
 use AppBundle\Model\Alert;
 use AppBundle\Model\Field;
 use AppBundle\Model\Level;
@@ -14,6 +13,16 @@ use Symfony\Component\HttpFoundation\Request;
 
 class DefaultController extends BaseController
 {
+    /**
+     * Redirects to www.munin-for-android.com
+     * @Route("/")
+     * @Method({"GET"})
+     */
+    public function indexAction()
+    {
+        return $this->redirect('https://www.munin-for-android.com');
+    }
+
     /**
      * Called by GCM-Trigger. Must contain following information:
      *  - reg_ids: comma-separated ids list
