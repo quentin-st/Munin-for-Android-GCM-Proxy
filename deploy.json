@@ -1,5 +1,5 @@
 {
   "projectType":  "symfony2",
-  "branch":       "release",
+  "branch":       "master",
   "passes":       "-assets -assetic"
 }
