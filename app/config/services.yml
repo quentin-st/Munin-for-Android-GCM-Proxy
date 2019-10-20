@@ -4,10 +4,10 @@ parameters:
 #    parameter_name: value
 
 services:
-    app.gcm:
-        class: AppBundle\Service\GCMService
+    app.firebase:
+        class: AppBundle\Service\FirebaseService
         arguments:
-            gcmClient: "@endroid.gcm.client"
+            firebaseApiKey: "%firebase_api_key%"
 
     app.mail_service:
         class: AppBundle\Service\MailService

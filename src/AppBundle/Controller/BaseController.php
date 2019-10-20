@@ -16,17 +16,14 @@ class BaseController extends Controller
     protected function checkParams(array $requiredParams, ParameterBag $post)
     {
         foreach ($requiredParams as $param) {
-            if (!$post->has($param))
+            if (!$post->has($param)) {
                 return $this->onError('Missing param: ' . $param);
+            }
         }
         return true;
     }
 
-    /**
-     * @param $message
-     * @return JsonResponse
-     */
-    protected function onError($message)
+    protected function onError(string $message): JsonResponse
     {
         return new JsonResponse([
             'success' => false,
@@ -34,14 +31,11 @@ class BaseController extends Controller
         ]);
     }
 
-    /**
-     * @param array $data
-     * @return JsonResponse
-     */
-    protected function onSuccess($data=[])
+    protected function onSuccess(array $data=[]): JsonResponse
     {
-        if (!array_key_exists('success', $data))
+        if (!array_key_exists('success', $data)) {
             $data['success'] = true;
+        }
 
         return new JsonResponse($data);
     }

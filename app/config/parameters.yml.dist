@@ -19,7 +19,7 @@ parameters:
     # A secret key that's used to generate certain security-related tokens
     secret:            ThisTokenIsNotSoSecretChangeIt
 
-    gcm_api_key:       null
+    firebase_api_key:  null
 
     maintainer_email:  null
     send_mail_on_error: false

@@ -100,7 +100,7 @@ class DefaultController extends BaseController
             }
 
             // Notify devices
-            $this->get('app.gcm')->notifyAlerts($reg_ids, $alerts);
+            $this->get('app.firebase')->notifyAlerts($reg_ids, $alerts);
 
             return $this->onSuccess();
         } catch (\Exception $ex) {
@@ -137,7 +137,7 @@ class DefaultController extends BaseController
     /**
      * Increments internal stats
      */
-    private function updateStats()
+    private function updateStats(): void
     {
         $em = $this->getDoctrine()->getManager();
         $em->getRepository('AppBundle:Stat')->incrementStat();
@@ -155,13 +155,14 @@ class DefaultController extends BaseController
         $post = $request->request;
 
         $check = $this->checkParams(['reg_ids'], $post);
-        if ($check !== true)
+        if ($check !== true) {
             return $check;
+        }
 
         $reg_ids = json_decode($post->get('reg_ids'), true);
 
         // Notify each device
-        $this->get('app.gcm')->test($reg_ids);
+        $this->get('app.firebase')->test($reg_ids);
 
         return $this->onSuccess();
     }
@@ -176,9 +177,9 @@ class DefaultController extends BaseController
         // Check POST params
         $post = $request->request;
 
-        $check = $this->checkParams(['mailAddress', 'regId'], $post);
-        if ($check !== true)
+        if (true !== $check = $this->checkParams(['mailAddress', 'regId'], $post)) {
             return $check;
+        }
 
         $this->get('app.mail_service')->sendInstructionsMail(
             $post->get('mailAddress'),
