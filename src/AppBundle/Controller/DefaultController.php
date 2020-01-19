@@ -47,8 +47,9 @@ class DefaultController extends BaseController
         $helpDiagnose = $post->get('help_diagnose', false);
         $contributeToStats = $post->get('contribute_to_stats', true);
 
-        if ($contributeToStats)
+        if ($contributeToStats) {
             $this->updateStats();
+        }
 
         if ($xml === false) {
             // There's an error

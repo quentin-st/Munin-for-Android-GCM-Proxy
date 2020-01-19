@@ -16,8 +16,8 @@ class StatRepository extends EntityRepository
     {
         $this->createQueryBuilder('stat')
             ->update()
-            ->set('stat.lastHit = :now')
-            ->set('stat.hitsCount = stat.hitsCount+1')
+            ->set('stat.lastHit', ':now')
+            ->set('stat.hitsCount', 'stat.hitsCount+1')
             ->getQuery()
             ->execute();
     }
