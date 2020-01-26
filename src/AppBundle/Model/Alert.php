@@ -20,12 +20,12 @@ class Alert
         $this->fields = [];
     }
 
-    public function addField(Field $field)
+    public function addField(Field $field): void
     {
         $this->fields[] = $field;
     }
 
-    public function toArray()
+    public function toArray(): array
     {
         $array = [
             'group' => $this->group,

@@ -53,7 +53,7 @@ class FirebaseService
                 $this->client->post('https://fcm.googleapis.com/fcm/send', [
                     RequestOptions::JSON => [
                         'to' => $regId,
-                        'data' => ['test' => true],
+                        'data' => $payload,
                     ],
                 ]);
 
