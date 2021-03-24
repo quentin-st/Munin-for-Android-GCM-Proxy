@@ -12,6 +12,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 class ProxyController extends AbstractController
@@ -25,6 +26,14 @@ class ProxyController extends AbstractController
         return $this->redirect('https://www.munin-for-android.com');
     }
 
+    /**
+     * Allows uptime checks
+     * @Route("/ping", methods={"GET"})
+     */
+    public function ping()
+    {
+        return new Response('pong');
+    }
 
     /**
      * Called by GCM-Trigger. Must contain following information:
