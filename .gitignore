@@ -1,13 +1,11 @@
-/app/bootstrap.php.cache
-/app/cache/*
-!app/cache/.gitkeep
-/app/config/parameters.yml
-/app/logs/*
-!app/logs/.gitkeep
-/app/phpunit.xml
-/bin/
-/composer.phar
-/vendor/
-/web/bundles/
+/.idea
 
-.idea
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
