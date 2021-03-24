@@ -13,7 +13,7 @@ function set_acl() {
         setfacl -dR -m u:www-data:rwX -m u:"$CURRENT_USER":rwX "$FOLDER"
     fi
 }
-set_acl app/logs
+set_acl var
 
 composer --ansi -n install --no-dev --optimize-autoloader
 bin/console --ansi -n cache:clear --no-warmup
