@@ -23,9 +23,8 @@ class FirebaseService
 
     /**
      * Notifies devices about alerts
-     * @param array $regIds
+     * @param string[] $regIds
      * @param Alert[] $alerts
-     * @return bool
      */
     public function notifyAlerts(array $regIds, array $alerts): bool
     {
@@ -36,11 +35,17 @@ class FirebaseService
         ]);
     }
 
+    /**
+     * @param string[] $regIds
+     */
     public function test(array $regIds): bool
     {
         return $this->send($regIds, ['test' => true]);
     }
 
+    /**
+     * @param string[] $regIds
+     */
     private function send(array $regIds, array $payload): bool
     {
         $results = [];
@@ -55,7 +60,7 @@ class FirebaseService
                 ]);
 
                 $results[] = true;
-            } catch (ClientException|ServerException $ex) {
+            } catch (ClientException|ServerException) {
                 $results[] = false;
             }
         }

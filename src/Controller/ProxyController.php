@@ -2,35 +2,41 @@
 
 namespace App\Controller;
 
-use App\Entity\Stat;
 use App\Model\Alert;
 use App\Model\Field;
 use App\Model\Level;
+use App\Repository\StatRepository;
 use App\Service\FirebaseService;
 use App\Service\MailService;
+use SimpleXMLElement;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 class ProxyController extends AbstractController
 {
+    public function __construct(
+        private readonly StatRepository $statRepo,
+    ) {
+    }
+
     /**
      * Redirects to www.munin-for-android.com
-     * @Route("/", methods={"GET"})
      */
-    public function index()
+    #[Route('/', methods: ['GET'])]
+    public function index(): Response
     {
         return $this->redirect('https://www.munin-for-android.com');
     }
 
     /**
      * Allows uptime checks
-     * @Route("/ping", methods={"GET"})
      */
-    public function ping()
+    #[Route("/ping", methods: ["GET"])]
+    public function ping(): Response
     {
         return new Response('pong');
     }
@@ -39,9 +45,9 @@ class ProxyController extends AbstractController
      * Called by GCM-Trigger. Must contain following information:
      *  - reg_ids: comma-separated ids list
      *  - data
-     * @Route("/trigger/declareAlert", name="declareAlert", methods={"POST"})
      */
-    public function declareAlert(Request $request, FirebaseService $firebaseService)
+    #[Route("/trigger/declareAlert", name: "declareAlert", methods: ["POST"])]
+    public function declareAlert(Request $request, FirebaseService $firebaseService): Response
     {
         // Check POST params
         $post = $request->request;
@@ -50,7 +56,7 @@ class ProxyController extends AbstractController
             return $check;
         }
 
-        $reg_ids = json_decode($post->get('reg_ids'), true);
+        $reg_ids = json_decode($post->get('reg_ids'), true, 512, JSON_THROW_ON_ERROR);
 
         // Parse data
         $dataString = $post->get('data');
@@ -73,7 +79,7 @@ class ProxyController extends AbstractController
             // Build alerts list
             $alerts = [];
 
-            /** @var \SimpleXMLElement $alert */
+            /** @var SimpleXMLElement $alert */
             foreach ($xml->alert as $alert) {
                 $attrs = $alert->attributes();
                 $group = (string) $attrs['group'];
@@ -84,7 +90,7 @@ class ProxyController extends AbstractController
                 $a = new Alert($group, $host, $graph_category, $graph_title);
 
                 // Find fields
-                /** @var \SimpleXMLElement $field */
+                /** @var SimpleXMLElement $field */
                 foreach ($alert->children() as $field) {
                     $level = $field->getName();
                     if (!in_array($level, ['warning', 'critical', 'unknown'])) {
@@ -119,16 +125,15 @@ class ProxyController extends AbstractController
      */
     private function updateStats(): void
     {
-        $em = $this->getDoctrine()->getManager();
-        $em->getRepository(Stat::class)->incrementStat();
+        $this->statRepo->incrementStat();
     }
 
     /**
      * Called by GCM-Trigger. Must contain following information:
      *  - reg_ids: comma-separated ids list
-     * @Route("/trigger/test", name="test", methods={"POST"})
      */
-    public function testAction(Request $request, FirebaseService $firebaseService)
+    #[Route("/trigger/test", name: "test", methods: ["POST"])]
+    public function testAction(Request $request, FirebaseService $firebaseService): Response
     {
         // Check POST params
         $post = $request->request;
@@ -137,7 +142,7 @@ class ProxyController extends AbstractController
             return $check;
         }
 
-        $reg_ids = json_decode($post->get('reg_ids'), true);
+        $reg_ids = json_decode($post->get('reg_ids'), true, 512, JSON_THROW_ON_ERROR);
 
         // Notify each device
         $firebaseService->test($reg_ids);
@@ -147,9 +152,9 @@ class ProxyController extends AbstractController
 
     /**
      * Called by Android devices from notifications settings screen
-     * @Route("/android/sendConfig", methods={"POST"})
      */
-    public function sendConfigByMailAction(Request $request, MailService $mailService)
+    #[Route("/android/sendConfig", methods: ["POST"])]
+    public function sendConfigByMailAction(Request $request, MailService $mailService): Response
     {
         // Check POST params
         $post = $request->request;
@@ -166,13 +171,10 @@ class ProxyController extends AbstractController
         return new JsonResponse();
     }
 
-    /**
-     * @Route("/stats/get", methods={"GET"})
-     */
-    public function getStats()
+    #[Route("/stats/get", methods: ["GET"])]
+    public function getStats(): Response
     {
-        $em = $this->getDoctrine()->getManager();
-        $stat = $em->getRepository(Stat::class)->getStat();
+        $stat = $this->statRepo->getStat();
 
         return new JsonResponse([
             'hits_count' => $stat->hitsCount,
@@ -180,10 +182,7 @@ class ProxyController extends AbstractController
         ]);
     }
 
-    /**
-     * @return bool|JsonResponse
-     */
-    private function checkParams(array $requiredParams, ParameterBag $post)
+    private function checkParams(array $requiredParams, ParameterBag $post): bool|JsonResponse
     {
         foreach ($requiredParams as $param) {
             if (!$post->has($param)) {

@@ -5,20 +5,17 @@ namespace App\Service;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
-use Symfony\Component\Templating\EngineInterface;
+use Twig\Environment;
 
 class MailService
 {
-    private MailerInterface $mailer;
-    private EngineInterface $twig;
-
     private const SENDER_EMAIL = 'support@munin-for-android.com';
     private const SENDER_NAME = 'Munin for Android';
 
-    public function __construct(MailerInterface $mailer, EngineInterface $twig)
-    {
-        $this->mailer = $mailer;
-        $this->twig = $twig;
+    public function __construct(
+        private readonly MailerInterface $mailer,
+        private readonly Environment $twig
+    ) {
     }
 
     public function sendInstructionsMail($emailAddress, $appId): void
