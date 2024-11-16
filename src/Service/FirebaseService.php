@@ -46,7 +46,7 @@ class FirebaseService
     /**
      * @param string[] $regIds
      */
-    private function send(array $regIds, array $payload): bool
+    protected function send(array $regIds, array $payload): bool
     {
         $results = [];
 

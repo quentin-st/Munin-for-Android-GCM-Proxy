@@ -8,6 +8,9 @@ use App\Model\Level;
 use App\Repository\StatRepository;
 use App\Service\FirebaseService;
 use App\Service\MailService;
+use Exception;
+use JsonException;
+use Psr\Log\LoggerInterface;
 use SimpleXMLElement;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -47,7 +50,7 @@ class ProxyController extends AbstractController
      *  - data
      */
     #[Route("/trigger/declareAlert", name: "declareAlert", methods: ["POST"])]
-    public function declareAlert(Request $request, FirebaseService $firebaseService): Response
+    public function declareAlert(Request $request, FirebaseService $firebaseService, LoggerInterface $logger): Response
     {
         // Check POST params
         $post = $request->request;
@@ -56,11 +59,15 @@ class ProxyController extends AbstractController
             return $check;
         }
 
-        $reg_ids = json_decode($post->get('reg_ids'), true, 512, JSON_THROW_ON_ERROR);
+        try {
+            $reg_ids = json_decode($post->get('reg_ids'), true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
+            return $this->onError('Invalid reg_ids: ' . $e->getMessage());
+        }
 
         // Parse data
         $dataString = $post->get('data');
-        $xml = simplexml_load_string($dataString);
+        $xml = @simplexml_load_string($dataString);
         $helpDiagnose = $post->get('help_diagnose', false);
         $contributeToStats = $post->get('contribute_to_stats', true);
 
@@ -115,8 +122,9 @@ class ProxyController extends AbstractController
             $firebaseService->notifyAlerts($reg_ids, $alerts);
 
             return $this->onSuccess();
-        } catch (\Exception $ex) {
-            return $this->onError('Error processing input: ' . $ex->getMessage());
+        } catch (Exception $ex) {
+            $logger->error($ex->getMessage());
+            return $this->onError('Error processing input');
         }
     }
 
@@ -202,9 +210,7 @@ class ProxyController extends AbstractController
 
     private function onSuccess(array $data=[]): JsonResponse
     {
-        if (!array_key_exists('success', $data)) {
-            $data['success'] = true;
-        }
+        $data['success'] = $data['success'] ?? true;
 
         return new JsonResponse($data);
     }
