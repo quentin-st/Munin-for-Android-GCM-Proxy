@@ -22,6 +22,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class ProxyController extends AbstractController
 {
     public function __construct(
+        private readonly FirebaseService $firebaseService,
         private readonly StatRepository $statRepo,
     ) {
     }
@@ -50,7 +51,7 @@ class ProxyController extends AbstractController
      *  - data
      */
     #[Route("/trigger/declareAlert", name: "declareAlert", methods: ["POST"])]
-    public function declareAlert(Request $request, FirebaseService $firebaseService, LoggerInterface $logger): Response
+    public function declareAlert(Request $request, LoggerInterface $logger): Response
     {
         // Check POST params
         $post = $request->request;
@@ -88,7 +89,7 @@ class ProxyController extends AbstractController
 
             /** @var SimpleXMLElement $alert */
             foreach ($xml->alert as $alert) {
-                $attrs = $alert->attributes();
+                $attrs = $alert->attributes() ?? [];
                 $group = (string) $attrs['group'];
                 $host = (string) $attrs['host'];
                 $graph_category = (string) $attrs['graph_category'];
@@ -104,7 +105,7 @@ class ProxyController extends AbstractController
                         continue;
                     }
 
-                    $attrs = $field->attributes();
+                    $attrs = $field->attributes() ?? [];
                     $a->addField(new Field(
                         (string) $attrs['label'],
                         (string) $attrs['value'],
@@ -119,9 +120,13 @@ class ProxyController extends AbstractController
             }
 
             // Notify devices
-            $firebaseService->notifyAlerts($reg_ids, $alerts);
+            $report = $this->firebaseService->notifyAlerts($reg_ids, $alerts);
+            $logs = $this->firebaseService->parseMulticastReport($report);
 
-            return $this->onSuccess();
+            return $this->onSuccess([
+                'success' => true,
+                'logs' => $logs,
+            ]);
         } catch (Exception $ex) {
             $logger->error($ex->getMessage());
             return $this->onError('Error processing input');
@@ -141,7 +146,7 @@ class ProxyController extends AbstractController
      *  - reg_ids: comma-separated ids list
      */
     #[Route("/trigger/test", name: "test", methods: ["POST"])]
-    public function testAction(Request $request, FirebaseService $firebaseService): Response
+    public function testAction(Request $request): Response
     {
         // Check POST params
         $post = $request->request;
@@ -153,9 +158,11 @@ class ProxyController extends AbstractController
         $reg_ids = json_decode($post->get('reg_ids'), true, 512, JSON_THROW_ON_ERROR);
 
         // Notify each device
-        $firebaseService->test($reg_ids);
+        $this->firebaseService->test($reg_ids);
 
-        return $this->onSuccess();
+        return $this->onSuccess([
+            'success' => true,
+        ]);
     }
 
     /**
@@ -208,10 +215,8 @@ class ProxyController extends AbstractController
         ]);
     }
 
-    private function onSuccess(array $data=[]): JsonResponse
+    private function onSuccess(array $data): JsonResponse
     {
-        $data['success'] = $data['success'] ?? true;
-
         return new JsonResponse($data);
     }
 }

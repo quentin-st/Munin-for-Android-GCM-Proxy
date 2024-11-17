@@ -1,0 +1,5 @@
+kreait_firebase:
+    projects:
+        rosario:
+            credentials: '%kernel.project_dir%/var/firebase-credentials.json'
+            default: true

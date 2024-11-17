@@ -31,8 +31,8 @@ jobs:
                     extensions: mbstring, xml, ctype, iconv, json, mysql
                     ini-values: date.timezone=Europe/Paris
             -   uses: actions/checkout@v4
-            #-   name: Create empty firebase-credentials.json
-            #    run: mkdir -p var && cp tests/Resources/fake-firebase-credentials.json var/firebase-credentials.json
+            -   name: Create empty firebase-credentials.json
+                run: mkdir -p var && cp tests/Resources/fake-firebase-credentials.json var/firebase-credentials.json
             -   name: Composer cache
                 id: cache-vendor
                 uses: actions/cache@v4

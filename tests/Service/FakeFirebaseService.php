@@ -3,16 +3,17 @@
 namespace App\Tests\Service;
 
 use App\Service\FirebaseService;
+use Kreait\Firebase\Messaging\MulticastSendReport;
 
 class FakeFirebaseService extends FirebaseService
 {
     private ?array $lastPayload = null;
 
-    protected function send(array $regIds, array $payload): bool
+    protected function send(array $regIds, array $payload): MulticastSendReport
     {
         $this->lastPayload = $payload;
 
-        return true;
+        return MulticastSendReport::withItems([]);
     }
 
     public function getLastPayload(): ?array

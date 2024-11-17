@@ -102,9 +102,10 @@ XML;
         $response = json_decode($this->client->getResponse()->getContent(), true);
         self::assertSame([
             'success' => true,
+            'logs' => [],
         ], $response);
         self::assertSame([
-            'alerts' => [
+            'alerts' => json_encode([
                 [
                     'group' => 'disk',
                     'host' => 'demo.munin-monitoring.org',
@@ -137,7 +138,7 @@ XML;
                         ],
                     ],
                 ],
-            ],
+            ], JSON_THROW_ON_ERROR),
         ], $fakeFirebaseService->getLastPayload());
     }
 }

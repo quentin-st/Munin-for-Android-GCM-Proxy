@@ -66,6 +66,9 @@
     "egulias/email-validator": {
         "version": "2.1.25"
     },
+    "kreait/firebase-bundle": {
+        "version": "5.5.0"
+    },
     "phpunit/phpunit": {
         "version": "9.6",
         "recipe": {
