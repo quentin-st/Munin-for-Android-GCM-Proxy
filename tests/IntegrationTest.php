@@ -5,6 +5,7 @@ namespace App\Tests;
 use App\Service\FirebaseService;
 use App\Tests\Service\FakeFirebaseService;
 use Generator;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -33,9 +34,7 @@ final class IntegrationTest extends WebTestCase
         self::assertSame('pong', $this->client->getResponse()->getContent());
     }
 
-    /**
-     * @dataProvider dataProvider_testDeclareAlertMissingParam
-     */
+    #[DataProvider('dataProvider_testDeclareAlertMissingParam')]
     public function testDeclareAlertMissingParam(array $parameters, string $expectedMessage): void
     {
         $this->client->request('POST', '/trigger/declareAlert', $parameters);
@@ -47,7 +46,7 @@ final class IntegrationTest extends WebTestCase
         ], $response);
     }
 
-    public function dataProvider_testDeclareAlertMissingParam(): Generator
+    public static function dataProvider_testDeclareAlertMissingParam(): Generator
     {
         yield [
             [],

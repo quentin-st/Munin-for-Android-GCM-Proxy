@@ -8,7 +8,6 @@ use Kreait\Firebase\Exception\FirebaseException;
 use Kreait\Firebase\Exception\Messaging\ApiConnectionFailed;
 use Kreait\Firebase\Exception\MessagingException;
 use Kreait\Firebase\Messaging\CloudMessage;
-use Kreait\Firebase\Messaging\MessageTarget;
 use Kreait\Firebase\Messaging\MulticastSendReport;
 use Kreait\Firebase\Messaging\SendReport;
 use Psr\Log\LoggerInterface;
@@ -41,7 +40,7 @@ class FirebaseService
      */
     public function test(array $regIds): MulticastSendReport
     {
-        return $this->send($regIds, ['test' => true]);
+        return $this->send($regIds, ['test' => '1']);
     }
 
     /**
@@ -54,7 +53,7 @@ class FirebaseService
         }
 
         $messages = array_map(
-            static fn(string $regId) => CloudMessage::withTarget(MessageTarget::TOKEN, $regId)
+            static fn(string $regId) => CloudMessage::new()->withToken($regId)
                 ->withData($payload),
             $regIds
         );
