@@ -186,7 +186,7 @@ class ProxyController extends AbstractController
         return new JsonResponse();
     }
 
-    #[Route("/stats/get", methods: ["GET"])]
+    #[Route("/stats", methods: ["GET"])]
     public function getStats(): Response
     {
         $stat = $this->statRepo->getStat();
@@ -194,6 +194,9 @@ class ProxyController extends AbstractController
         return new JsonResponse([
             'hits_count' => $stat->hitsCount,
             'last_hit' => $stat->lastHit->getTimestamp()
+        ], headers: [
+            'Access-Control-Allow-Origin' => 'https://www.munin-for-android.com', // fetched by the website's JS
+            'Cache-Control' => 'public, max-age=3600, s-maxage=86400',
         ]);
     }
 
